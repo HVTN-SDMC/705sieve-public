@@ -12,11 +12,12 @@
 rm(list=ls(all=TRUE))
 
 # Setting directory paths -------------------------------------------------
-dataDir <- "/file/path/data"
-codeDir <- "/file/path/code/westfallYoung"
-figureDir <- "/file/path/figures/westfallYoung"
-tableDir <- "/file/path/tables/westfallYoung"
-preScreentableDir <- "/file/path/tables/preScreen"
+here::i_am("README.md")
+repoDir <- here::here()
+dataDir <- file.path(repoDir, "data")
+codeDir <- file.path(repoDir, "code/1_westfallYoung")
+figureDir <- file.path(repoDir, "figures")
+tableDir <- file.path(repoDir, "tables")
 
 # Initialization
 library(tidyverse)
@@ -25,7 +26,7 @@ library(sievePH)
 # load supplement
 source(file.path(codeDir, "lunnMcneil.R"))
 source(file.path(codeDir, "p.adj.perm2.R"))
-source(file.path(codeDir, "common.R"))
+source(file.path(repoDir, "code/common.R"))
 
 # load input data
 sieveData <- read.csv(file.path(dataDir, datFile)) %>%
@@ -44,10 +45,10 @@ hdist_ab_no364 <- grep("no364", hdist.zspace, value = TRUE)
 hdist.zspace <- hdist.zspace[!hdist.zspace%in% hdist_ab_no364 ]
 
 # load binary marks that pass the screening filter
-posIsAAtier1PosScreenedIn <- read.csv(file.path(preScreentableDir , paste0("posIsAAtier1posVarScreenedIn.csv")))
-posIsAAtier2PosScreenedIn <- read.csv(file.path(preScreentableDir , paste0("posIsAAtier1posVarScreenedIn.csv")))
+posIsAAtier1PosScreenedIn <- read.csv(file.path(tableDir , paste0("posIsAAtier1posVarScreenedIn.csv")))
+posIsAAtier2PosScreenedIn <- read.csv(file.path(tableDir , paste0("posIsAAtier1posVarScreenedIn.csv")))
 
-sequonPosScreenedIn <- read.csv(file.path(preScreentableDir , paste0("sequonPosVarScreenedIn.csv")))
+sequonPosScreenedIn <- read.csv(file.path(tableDir , paste0("sequonPosVarScreenedIn.csv")))
 #Exclude sequon at postions 362 and 363 since they were sensitivity analysis
 sequonPosScreenedIn2 <- sequonPosScreenedIn$x[!sequonPosScreenedIn$x %in% c("hxb2.362.is.sequon.tier1", "hxb2.363.is.sequon.tier1")]
 

@@ -2,7 +2,7 @@
 # Perform pre-screening for all binary features using minimum variability filter
 # The criteria is with ≥ 4 cases at each feature level in their single analyzed AA sequence
 # Input:   705 primary endpoints,  sequence features specified in the sieve SAP that are to be adjusted in multiple comparison
-# Output:  Tables with marks pass the minimum varialbity filter
+# Output:  Tables with marks pass the minimum variability filter
 
 
 # refresh the workspace
@@ -10,17 +10,19 @@ rm(list=ls(all=TRUE))
 
 
 # Setting directory paths -------------------------------------------------
-dataDir <- "/file/path/data"
-codeDir <- "/file/path//code/preScreen"
-figureDir <- "/file/path//figures/preScreen"
-tableDir <- "/file/path//tables/preScreen"
+here::i_am("README.md")
+repoDir <- here::here()
+dataDir <- file.path(repoDir, "data")
+codeDir <- file.path(repoDir, "code/0_preScreen")
+figureDir <- file.path(repoDir, "figures")
+tableDir <- file.path(repoDir, "tables")
 
 # Initialization
 library(tidyverse)
 library(plyr)
 # load supplement
 source(file.path(codeDir, "screenUtils.R"))
-source(file.path(codeDir, "common.R"))
+source(file.path(repoDir, "code/common.R"))
 
 # load input data
 sieveData <- read.csv(file.path(dataDir, datFile))

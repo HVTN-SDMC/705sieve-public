@@ -9,13 +9,14 @@
 # refresh the workspace
 rm(list=ls(all=TRUE))
 
+# Setting directory paths -------------------------------------------------
+here::i_am("README.md")
+repoDir <- here::here()
+dataDir <- file.path(repoDir, "data")
+codeDir <- file.path(repoDir, "code/2_sieveBinary")
+figureDir <- file.path(repoDir, "figures")
+tableDir <- file.path(repoDir, "tables")
 
-dataDir <- "/file/path/data"
-codeDir <- "/file/path/code/sieveBinary"
-figDir <- "/file/path/figures/sieveBinary"
-tabDir <- "/file/path/tables/sieveBinary"
-adjPvalueDir <- "/file/path/tables/westfallYoung"
-preScreenDir <- "/file/path/tables/preScreen"
 
 # Initialization
 library(tidyverse)
@@ -29,7 +30,7 @@ library(gtable)
 source(file.path(codeDir, "lunnMcneil.R"))
 source(file.path(codeDir, "sieveBinaryUtils.R"))
 source(file.path(codeDir, "forest.R"))
-source(file.path(codeDir, "common.R"))
+source(file.path(repoDir, "code/common.R"))
 
 # load input data
 sieveData <- read.csv(file.path(dataDir, datFile)) %>%
@@ -44,9 +45,9 @@ sieveData <- read.csv(file.path(dataDir, datFile)) %>%
 posIsAA <- colnames(sieveData)[grepl(".is.", colnames(sieveData)) & grepl("hxb2", colnames(sieveData)) & 
                                  (!grepl("is.sequon.tier1", colnames(sieveData)))]
 sequonPos <- colnames(sieveData)[grepl("is.sequon.tier1", colnames(sieveData))]
-posIsAAtier1PosScreenedIn <- read.csv(file.path(preScreenDir, paste0("posIsAAtier1posVarScreenedIn.csv")))
-posIsAAtier2PosScreenedIn <- read.csv(file.path(preScreenDir, paste0("posIsAAtier2posVarScreenedIn.csv")))
-sequonPosScreenedIn <- read.csv(file.path(preScreenDir, paste0("sequonPosVarScreenedIn.csv")))
+posIsAAtier1PosScreenedIn <- read.csv(file.path(tableDir, paste0("posIsAAtier1posVarScreenedIn.csv")))
+posIsAAtier2PosScreenedIn <- read.csv(file.path(tableDir, paste0("posIsAAtier2posVarScreenedIn.csv")))
+sequonPosScreenedIn <- read.csv(file.path(tableDir, paste0("sequonPosVarScreenedIn.csv")))
 
 
 
@@ -104,7 +105,7 @@ for(tier in c("tier1","tier2")){
 
 # Table summary for tier 2 type 1
 markResultList <- binaryResultList[["tier2"]]
-WestfallYoungAdjPvalues <- read.csv(file=file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier2Type1and2.csv")))
+WestfallYoungAdjPvalues <- read.csv(file=file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier2Type1and2.csv")))
 colnames(WestfallYoungAdjPvalues ) <- c("X", "p.unadj","p.FWER","p.FDR")
 posScreenedInList <- tier2posScreenedInList
 posIsAAVE = table.VE.residue(markResultList,marks = tier2posScreenedInList$posIsAA, WestfallYoungAdjPvalues) 
@@ -117,7 +118,7 @@ write.csv(posIsAAVE, file.path(tableDir,"sieveBinary", paste0("tier2posIsAAVE.cs
 
 # Table summary for tier 1 type 1 and 3
 markResultList <- binaryResultList[["tier1"]]
-WestfallYoungAdjPvalues <- read.csv(file=file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
+WestfallYoungAdjPvalues <- read.csv(file=file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
 colnames(WestfallYoungAdjPvalues) <- c("X", "p.unadj", "p.FWER", "p.FDR")
 
 posScreenedInList <- tier1posScreenedInList
@@ -171,7 +172,7 @@ ggplot2::ggsave(filename = "VE_singleVsMultipleFounder.pdf",
 
 
 # forestplot for residue scanning at position 364
-WestfallYoungAdjPvalues <- read.csv(file=file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
+WestfallYoungAdjPvalues <- read.csv(file=file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
 colnames(WestfallYoungAdjPvalues) <- c("X", "p.unadj","p.FWER","p.FDR")
 marks <- c("hxb2.364.is.S.tier1","hxb2.364.is.P.tier1")
 VE <- tibble(mark = character(), position = character(),residue = character(), cases = character(), VE = character(), mean = numeric(),
@@ -248,7 +249,7 @@ ggplot2::ggsave(filename = paste0("posthoc_sequon362_363.pdf"),
 
 # forestplot for the presence of sequon at positions other than 362 and 363
 markResultList <- binaryResultList[["tier1"]]
-WestfallYoungAdjPvalues <- read.csv(file=file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
+WestfallYoungAdjPvalues <- read.csv(file=file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier1Type1to4.csv")))
 colnames(WestfallYoungAdjPvalues ) <- c("X", "p.unadj", "p.FWER", "p.FDR")
 sequonPosScreenedIn2 <- sequonPosScreenedIn$x[!sequonPosScreenedIn$x %in% c("hxb2.362.is.sequon.tier1", "hxb2.363.is.sequon.tier1")]
 sequonsVE_forestTable <- table.VE.sequon(markResultList, marks = sequonPosScreenedIn2, WestfallYoungAdjPvalues, forestplot = TRUE)
@@ -272,7 +273,7 @@ ggplot2::ggsave(filename = paste0("tier1sequon.pdf"),
 
 
 # Forest plot summary for tier 2 type 3: number of sequons in V5
-WestfallYoungAdjPvalues <- read.csv(file=file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier2Type3and4.csv")))
+WestfallYoungAdjPvalues <- read.csv(file=file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier2Type3and4.csv")))
 colnames(WestfallYoungAdjPvalues ) <- c("X", "p.unadj","p.FWER","p.FDR")
 markResultList <- binaryResultList[["tier2"]]
 VEtable <- markResultList[["numSequonV5"]]$VEtable

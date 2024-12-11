@@ -11,12 +11,14 @@
 # refresh the workspace
 rm(list=ls(all=TRUE))
 
+# Setting directory paths -------------------------------------------------
+here::i_am("README.md")
+repoDir <- here::here()
+dataDir <- file.path(repoDir, "data")
+codeDir <- file.path(repoDir, "code/3_sievePH")
+figureDir <- file.path(repoDir, "figures")
+tableDir <- file.path(repoDir, "tables")
 
-dataDir <- "/file/path/data"
-codeDir <- "/file/path/code/sievePH"
-figDir <- "/file/path/figures/sievePH"
-tabDir <- "/file/path/tables/sievePH"
-adjPvalueDir <- "/file/path/tables/westfallYoung"
 
 # Initialization
 library(tidyverse)
@@ -24,7 +26,7 @@ library(sievePH)
 
 # load supplement
 source(file.path(codeDir, "ggplot.summary.sievePH.R"))
-source(file.path(codeDir, "common.R"))
+source(file.path(repoDir, "code/common.R"))
 
 # load input data
 sieveData <- read_csv(file.path(datDir, datFile)) %>%
@@ -165,10 +167,10 @@ for (i in 1:length(dist)){
   ggsave.width <- 0.7 * 7.3
   ggsave.height <- 0.7 * 6.5
   title <- NULL
-  pval.filepath <- file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier1Type5to7.csv"))
+  pval.filepath <- file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier1Type5to7.csv"))
   p.df <- read_csv(pval.filepath, show_col_types=FALSE)
   p.df1 <- filter(p.df, mark%in%dist)
-  pval.filepath <- file.path(adjPvalueDir, paste0("WestfallYoungAdjPvalues_tier2Type3and4.csv"))
+  pval.filepath <- file.path(tableDir, paste0("WestfallYoungAdjPvalues_tier2Type3and4.csv"))
   p.df <- read_csv(pval.filepath, show_col_types=FALSE)
   p.df2 <- filter(p.df, mark%in%dist)
   
