@@ -5,42 +5,42 @@
 
   Unless otherwise specified, software was tested on macOS Monterey running R version 4.4.1 (2024-06-14).
   
-  Specific R packages and R files required by each program are listed below.
+  Main programs as well as specific R packages and R files required by each program are listed below.
 
-<dd>`code/0_preScreen/screenMain.R`: performs the minimum variablity filter</dd>   
-    tidyverse 2.0.0 
-    plyr 1.8.9 
-    screenUtils.R 
-    common.R 
+* `code/0_preScreen/screenMain.R`: performs the minimum variablity filter  
+    + tidyverse 2.0.0 
+    + plyr 1.8.9 
+    + screenUtils.R 
+    + common.R 
     
-  <dd>`code/1_westfallYoung/sieveWestfallYoungPermPvals.R`: performs sieve analyses and p-value adjustment</dd>
-    sievePH 1.0.3
-    lunnMcneil.R
-    p.adj.perm2.R
-    common.R
+* `code/1_westfallYoung/sieveWestfallYoungPermPvals.R`: performs sieve analyses and p-value adjustment
+    + sievePH 1.0.3
+    + lunnMcneil.R
+    + p.adj.perm2.R
+    + common.R
     
-  <dd>`code/2_sieveBinary/sieveBinaryMain.R`: summarizes sieve analyses for binary features of Env amino acid sequences</dd>
-    tidyverse 2.0.0
-    plyr 1.8.9
-    grid 4.4.1
-    gridExtra 2.3
-    gtable 0.3.5
-    lunnMcneil.R
-    sieveBinaryUtils.R
-    forest.R
-    common.R
+* `code/2_sieveBinary/sieveBinaryMain.R`: summarizes sieve analyses for binary features of Env amino acid sequences
+    + tidyverse 2.0.0
+    + plyr 1.8.9
+    + grid 4.4.1
+    + gridExtra 2.3
+    + gtable 0.3.5
+    + lunnMcneil.R
+    + sieveBinaryUtils.R
+    + forest.R
+    + common.R
     
-  <dd>`code/3_sievePH/VEbyHammingDist.R` and `code/3_sievePH/VEbyOtherQuantMarks.R`: plot sieve analysis results for continuous-valued features of Env amino acid sequences</dd>
-    tidyverse 2.0.0
-    sievePH 1.0.3
-    ggplot.summary.sievePH.R
-    common.R
+* `code/3_sievePH/VEbyHammingDist.R` and `code/3_sievePH/VEbyOtherQuantMarks.R`: plot sieve analysis results for continuous-valued features of Env amino acid sequences
+    + tidyverse 2.0.0
+    + sievePH 1.0.3
+    + ggplot.summary.sievePH.R
+    + common.R
 
 ### 2. Installation Guide
   
-  Install required version of *R*.  
-  Install required *R* packages.  
-  Clone this repository.
+* Install required version of *R*.  
+* Install required *R* packages.  
+* Clone this repository.
   
 ### 3. User Instructions
 
