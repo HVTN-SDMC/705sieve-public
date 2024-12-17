@@ -1,4 +1,4 @@
-## HVTN 705 Genotypic Sieve Anaylsis:  Script for Generating Primary Analysis Dataset
+## HVTN 705 Genotypic Sieve Analysis:  Script for Generating Primary Analysis Dataset
 
 ### This program has the following requirements:
 
