@@ -36,6 +36,12 @@
     + ggplot.summary.sievePH.R
     + common.R
 
+* `code/4_multiseq/multiseq_heatmaps.R`: generates heatmaps in Figures S14 and S15 based on multiple sequences per participant
+    + tidyverse 2.0.0
+    + ggpubr 0.6.0
+    + scales 1.3.0
+    + DT 0.33.3
+
 ### 2. Installation Guide
   
 * Install required version of *R*.  
