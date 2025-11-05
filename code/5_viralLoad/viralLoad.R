@@ -11,14 +11,8 @@ tableDir <- file.path(repoDir, "tables")
 
 
 library(scales)
-library(ggpubr)
-library(drtmle)
-library(SuperLearner)
-library(randomForest)
-library(np)
 library(tidyverse)
-library(AFR)
-library(MASS)
+
 
 # load supplement
 source(file.path(repoDir, "code/common.R"))

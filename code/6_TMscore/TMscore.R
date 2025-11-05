@@ -11,8 +11,6 @@ tableDir <- file.path(repoDir, "tables")
 
 library(here)
 library(tidyverse)
-library(sievePH)
-library(patchwork)
 source(file.path(repoDir, "code/common.R"))
 
 source(file.path(codeDir, "utils.R"))
@@ -59,7 +57,7 @@ df <- sapply(1:length(marks), function(i){
 })
 df <- data.frame(t(df))
 colnames(df) <- c("marks_keep", "beta")
-p_df_lb6_v705_A_v1 <- read_csv(here("tables/westfallYoung/WestfallYoungAdjPvalues_TMscores_lb6_v705_A_v1_lm.csv"), show_col_types=FALSE)
+p_df_lb6_v705_A_v1 <- read_csv(file.path(tabDir, "WestfallYoungAdjPvalues_TMscores_lb6_v705_A_v1_lm.csv"))
 colnames(p_df_lb6_v705_A_v1)[1] <- "marks_keep"
 df <- left_join(df, p_df_lb6_v705_A_v1, by = "marks_keep")
 p <- list()

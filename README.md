@@ -41,6 +41,17 @@
     + ggpubr 0.6.0
     + scales 1.3.0
     + DT 0.33.3
+    
+* `code/5_viralLoad/viralLoad.R`: generates violin and boxplots for viral loads and sequencing depths and computes p-values for comparing vaccine to placebo
+    + tidyverse 2.0.0
+    + scales 1.3.0
+
+* `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R`: TM score analysis comparing the TM scores of vaccine endpoints to placebo endpoints using linear regressions and p-value adjustment
+    + tidyverse 2.0.0
+
+* `code/6_TMscore/TMscore.R`: plot TM score analysis 
+    + tidyverse 2.0.0
+
 
 ### 2. Installation Guide
   
@@ -50,9 +61,9 @@
   
 ### 3. User Instructions
 
-  Each code file should run in less than 2 minutes except `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` which 
-  takes approximately 1 day to run.  Output is saved as either a figure (a `.pdf` file in the `figures` directory) or 
-  a table (a `.csv` file in the `tables` directory).
+  Each code file should run in less than 10 minutes except `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` and 
+  `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R` which may take approximately a few hours to run.  Output is saved
+  as either a figure (a `.pdf` file in the `figures` directory) or a table (a `.csv` file in the `tables` directory).
   
   From the command line, starting in the `code` directory, run the following commands:
 
@@ -60,4 +71,9 @@
     R CMD BATCH 1_westfallYoung/sieveWestfallYoungPermPvals.R &
     R CMD BATCH 2_sieveBinary/sieveBinaryMain.R &
     R CMD BATCH 3_sievePH/VEbyHammingDist.R &
-    R CMD BATCH 3_sievePH/VEbyOtherQuantMarks.R 
+    R CMD BATCH 3_sievePH/VEbyOtherQuantMarks.R &
+    R CMD BATCH 4_multiseq/multiseq_heatmaps.R &
+    R CMD BATCH 5_viralLoad/viralLoad.R &
+    R CMD BATCH 6_TMscore/TMscoreWestfallYoungPermPvalse.R &
+    R CMD BATCH 6_TMscore/TMscore.R
+    
