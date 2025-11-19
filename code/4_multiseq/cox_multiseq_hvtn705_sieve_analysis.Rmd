@@ -1,0 +1,949 @@
+---
+title: "705 Cox multi-sequence sieve analysis"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Introduction 
+
+In this document, we implement a multi-sequence sieve analysis using the methods 
+to analyze binary marks from Peng et al. (in progress). 
+
+*Data processing notes*: 
+
+* Of 2,188 participants, there are 119 with `hiv1event == 1`. 
+* There are 23 participants with sequencing data for whom `hiv1event == 0`. 
+* There are 3 participants for whom `hiv1event == 1` with no sequencing data. 
+(These participants are removed for the time being.)
+* With these 3 excluded, we have 2,185 participants in the dataset. 
+
+*Covariates*: BMI, risk score, age, stratified by indicator of South Africa
+
+*Pre-screening*: 
+
+* For each binary mark, calculate the raw proportions of each individual's sequences
+having mark value = 1. 
+* Let $\tilde{J}_{i,q_0}$ denote the indicator that the $i$th individual's 
+raw proportion exceeds the $q_0$ threshold. 
+* Let $J_{i, mindist}$ denote the mindist sequence binary value of the $i$th 
+individual. 
+* If (1) $\sum_{i=1}^{n_{cases}} | J_{i, mindist} -\tilde{J}_{i,q_0}| \ge 12$ (over 10%
+of threshold-classified marks are different than the mindist marks ), (2) 
+$\sum_{i=1}^{n_{cases}} \tilde{J}_{i,q_0} \ge 4$, and (3) 
+$\sum_{i=1}^{n_{cases}} |1 - \tilde{J}_{i,q_0}| \ge 4$, then we screen in the mark 
+for the multi-sequence analysis. 
+
+# Setup 
+
+* Make sure that the multi-sequence sieve dataset, mindist sieve dataset, and 
+subject-level sieve dataset are in the same folder as this code file, or change 
+the directory names in the data section below. 
+* Make sure all packages are installed. 
+* For each binary mark type, this file will output CSV files with the pre-screening 
+metrics and the multi-sequence sieve analysis results for screened in results. 
+
+# Packages 
+
+```{r, include = F}
+knitr::opts_chunk$set(echo = T, warning = F, message = F, eval = F)
+```
+
+
+```{r include = T, warning = F, message = F}
+library(dplyr)
+library(DT)
+library(purrr)
+library(ggplot2)
+library(ggpubr)
+library(survival)
+library(deconvolveR)
+library(future)
+library(future.apply)
+library(ggbeeswarm)
+
+source("helper/multiseq_cox_code.R")
+source("helper/deconv_fast.R")
+source("helper/p.adj.perm2.R")
+
+plan(multisession, workers = parallel::detectCores() - 1)
+
+boots <- 300
+```
+
+# Read datasets 
+
+
+```{r}
+# multi-sequence sieve dataset 
+df_sieve <- read.csv("HVTN_705_multiseq_sieve_data_v3.csv")
+
+# mindist sieve dataset 
+df_sieve_mindist <- read.csv("HVTN_705_sieve_data_final_v8.csv")
+
+# subject-level sieve dataset 
+df_sieve_subj <- read.csv("HVTN_705_multiseq_subject_data_v3.csv")
+
+```
+
+# Data processing 
+
+```{r}
+# merge in hiv1event and arm 
+df_sieve <- df_sieve %>% 
+  
+  merge(df_sieve_subj %>% 
+          select(subjid, hiv1event, armdesc))
+
+# filter for first visit only 
+df_sieve_visit_to_keep <- df_sieve %>% 
+  arrange(subjid, visit) %>% 
+  select(subjid, visit) %>% 
+  distinct(subjid, .keep_all = T)
+
+df_sieve <- df_sieve %>% merge(df_sieve_visit_to_keep)
+
+```
+
+# Residue matched to insert {.tabset .tabset-fade} 
+
+"hxb2.pos.1mer.insert.match[.tier1]": The binary indicator variable for 
+whether a residue at the given site matches the residue in the indicated 
+insert.
+
+* "pos" = the HXB2 coordinate of the position 
+* "insert" = the insert that the representative sequence is compared with.
+
+Our inserts are coded as:
+
+* "mos1" = Ad26 Mos1 Env insert
+* "mos2" = Ad26 Mos2S Env insert
+* "c97za" = C97ZA Clade C insert
+* "1428v1v2" = V1V2 positions motivated by the V1V2 IgG3 correlates result,
+                   compared to the 1428 V1V2 antigen sequence.
+
+The "tier1" tag is present only for those sites that are classified as Tier 1,
+Type 2 marks.
+
+Matches for "mos1", "mos2", and "c97za" were made for all positions in Env
+which were not deemed unalignable.  This includes positions that did not
+pass the minimum variability filter.
+
+Matches for "1428v1v2" were made for positions 130, 155, 160, 161, 164, 165,
+166, 170, 172, 173, 178, 179, 181, 186, and 200.
+   
+A value of "1" indicates a match with the vaccine, while a value of "0" 
+indicates a mismatch.
+
+```{r}
+cols_to_summarize_match <- grep("^hxb2\\.[0-9]+\\.1mer\\..+$", colnames(df_sieve), 
+                                value = TRUE)
+```
+
+## $q_0 = 0.01$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+```{r}
+df_prescreening_match_0.01 <- data.frame()
+
+for (col in cols_to_summarize_match){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_variability_screen(df_mark,
+                                     thresh = 0.01)
+
+  res_temp$mark <- col
+
+  df_prescreening_match_0.01 <- rbind(df_prescreening_match_0.01, res_temp)
+}
+
+df_prescreening_match_0.01 <- df_prescreening_match_0.01 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 &
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_match_0.01,
+          file = "prescreening_match_0.01_screen.csv",
+          row.names = F)
+```
+
+### Sieve analysis 
+
+Outputs datasets with the following variables: 
+
+* ve0_estimate: VE estimate for $J_{q_0} = 0$ viruses.
+* ve0_se: Bootstrap standard error for VE0.
+* ve0_lo: Lower confidence limit for VE0.
+* ve0_hi: Upper confidence limit for VE0.
+* ve1_estimate: VE estimate for J_q0 = 1 viruses.
+* ve1_se: Bootstrap standard error for VE1.
+* ve1_lo: Lower confidence limit for VE1.
+* ve1_hi: Upper confidence limit for VE1.
+* p_ve0: P-value for testing VE0 = 0.
+* p_ve1: P-value for testing VE1 = 0.
+* p_val_no_ve: P-value for testing that VE0 = VE1 = 0.
+* p_val_equal: P-value for testing that VE0 = VE1.
+
+```{r}
+temp_filtered_cols <- (df_prescreening_match_0.01 %>% filter(pass_screen == T))$mark
+thresh <- 0.01 
+
+df_res <- data.frame()
+for (col in temp_filtered_cols){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_full_analysis(df_mark,
+                                cl_probs_vars = c("Z"),
+                                covariates = c("Z", "age", "bmi", "riskscoresl"),
+                                event_var = "allstatus",
+                                time_var = "observed_time",
+                                stratification_var = "ind_sa",
+                                boots = boots,
+                                thresh = thresh,
+                                par = rep(0.5, 8),
+                                col_beta0 = 1,
+                                col_beta1 = 5)
+
+  res_temp$mark <- col
+  res_temp$thresh <- thresh
+
+  df_res <- df_res %>%
+    rbind(res_temp)
+}
+
+write.csv(df_res,
+          file = "res_match_0.01.csv",
+          row.names = F)
+```
+
+
+## $q_0 = 0.99$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+```{r}
+df_prescreening_match_0.99 <- data.frame()
+
+for (col in cols_to_summarize_match){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_variability_screen(df_mark,
+                                     thresh = 0.99)
+
+  res_temp$mark <- col
+
+  df_prescreening_match_0.99 <- rbind(df_prescreening_match_0.99, res_temp)
+}
+
+df_prescreening_match_0.99 <- df_prescreening_match_0.99 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 &
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_match_0.99,
+          file = "prescreening_match_0.99_screen.csv",
+          row.names = F)
+
+```
+
+
+
+### Sieve analysis 
+
+Outputs datasets with the following variables: 
+
+* ve0_estimate: VE estimate for $J_{q_0} = 0$ viruses.
+* ve0_se: Bootstrap standard error for VE0.
+* ve0_lo: Lower confidence limit for VE0.
+* ve0_hi: Upper confidence limit for VE0.
+* ve1_estimate: VE estimate for J_q0 = 1 viruses.
+* ve1_se: Bootstrap standard error for VE1.
+* ve1_lo: Lower confidence limit for VE1.
+* ve1_hi: Upper confidence limit for VE1.
+* p_ve0: P-value for testing VE0 = 0.
+* p_ve1: P-value for testing VE1 = 0.
+* p_val_no_ve: P-value for testing that VE0 = VE1 = 0.
+* p_val_equal: P-value for testing that VE0 = VE1.
+
+```{r}
+temp_filtered_cols <- (df_prescreening_match_0.99 %>% filter(pass_screen == T))$mark
+
+thresh <- 0.99
+
+df_res <- data.frame()
+for (col in temp_filtered_cols){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_full_analysis(df_mark,
+                                cl_probs_vars = c("Z"),
+                                covariates = c("Z", "age", "bmi", "riskscoresl"),
+                                event_var = "allstatus",
+                                time_var = "observed_time",
+                                stratification_var = "ind_sa",
+                                boots = boots,
+                                thresh = thresh,
+                                par = rep(0.5, 8),
+                                col_beta0 = 1,
+                                col_beta1 = 5)
+
+  res_temp$mark <- col
+  res_temp$thresh <- thresh
+
+  df_res <- df_res %>%
+    rbind(res_temp)
+}
+
+write.csv(df_res,
+          file = "res_match_0.99.csv",
+          row.names = F)
+
+```
+
+
+# Reference-independent amino acid scanning {.tabset .tabset-fade} 
+
+hxb2.pos.is.aa: The binary indictor variable for the reference-independent
+amino acid site scanning.
+
+* "pos" = the HXB2 coordinate of the position. Note that the values for
+              "pos" have leading zeros for positions that are less than 100.
+* "aa" = the amino acid that exists at that position for at least one
+             sequence. If there is a gap at that position, the value of "aa"
+             will be "gap".
+
+A value of "1" indicates a match with the amino acid, while a value of "0"
+indicates a mismatch.
+
+```{r}
+cols_to_summarize_aa <- grep("^hxb2\\..*\\.is\\..*$", colnames(df_sieve),
+                             value = TRUE)
+```
+
+## $q_0 = 0.01$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+
+```{r}
+df_prescreening_aa_0.01 <- data.frame()
+
+for (col in cols_to_summarize_aa){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_variability_screen(df_mark,
+                                      thresh = 0.01)
+
+  res_temp$mark <- col
+
+  df_prescreening_aa_0.01 <- rbind(df_prescreening_aa_0.01, res_temp)
+}
+
+df_prescreening_aa_0.01 <- df_prescreening_aa_0.01 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 &
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_aa_0.01,
+          file = "prescreening_aa_0.01_screen.csv",
+          row.names = F)
+```
+
+
+### Sieve analysis 
+
+Outputs datasets with the following variables: 
+
+* ve0_estimate: VE estimate for $J_{q_0} = 0$ viruses.
+* ve0_se: Bootstrap standard error for VE0.
+* ve0_lo: Lower confidence limit for VE0.
+* ve0_hi: Upper confidence limit for VE0.
+* ve1_estimate: VE estimate for J_q0 = 1 viruses.
+* ve1_se: Bootstrap standard error for VE1.
+* ve1_lo: Lower confidence limit for VE1.
+* ve1_hi: Upper confidence limit for VE1.
+* p_ve0: P-value for testing VE0 = 0.
+* p_ve1: P-value for testing VE1 = 0.
+* p_val_no_ve: P-value for testing that VE0 = VE1 = 0.
+* p_val_equal: P-value for testing that VE0 = VE1.
+
+```{r}
+temp_filtered_cols <- (df_prescreening_aa_0.01 %>% filter(pass_screen == T))$mark
+
+thresh <- 0.01
+df_res <- data.frame()
+for (col in temp_filtered_cols){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_full_analysis(df_mark,
+                                cl_probs_vars = c("Z"),
+                                covariates = c("Z", "age", "bmi", "riskscoresl"),
+                                event_var = "allstatus",
+                                time_var = "observed_time",
+                                stratification_var = "ind_sa",
+                                boots = boots,
+                                thresh = thresh,
+                                par = rep(0.5, 8),
+                                col_beta0 = 1,
+                                col_beta1 = 5)
+
+  res_temp$mark <- col
+  res_temp$thresh <- thresh
+
+  df_res <- df_res %>%
+    rbind(res_temp)
+
+}
+
+write.csv(df_res,
+          file = "res_aa_0.01.csv",
+          row.names = F)
+```
+
+
+## $q_0 = 0.99$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+```{r}
+df_prescreening_aa_0.99 <- data.frame()
+
+for (col in cols_to_summarize_aa){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_variability_screen(df_mark,
+                                     thresh = 0.99)
+
+  res_temp$mark <- col
+
+  df_prescreening_aa_0.99 <- rbind(df_prescreening_aa_0.99, res_temp)
+}
+
+df_prescreening_aa_0.99 <- df_prescreening_aa_0.99 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 &
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_aa_0.99,
+          file = "prescreening_aa_0.99_screen.csv",
+          row.names = F)
+
+```
+
+
+### Sieve analysis 
+
+Outputs datasets with the following variables: 
+
+* ve0_estimate: VE estimate for $J_{q_0} = 0$ viruses.
+* ve0_se: Bootstrap standard error for VE0.
+* ve0_lo: Lower confidence limit for VE0.
+* ve0_hi: Upper confidence limit for VE0.
+* ve1_estimate: VE estimate for J_q0 = 1 viruses.
+* ve1_se: Bootstrap standard error for VE1.
+* ve1_lo: Lower confidence limit for VE1.
+* ve1_hi: Upper confidence limit for VE1.
+* p_ve0: P-value for testing VE0 = 0.
+* p_ve1: P-value for testing VE1 = 0.
+* p_val_no_ve: P-value for testing that VE0 = VE1 = 0.
+* p_val_equal: P-value for testing that VE0 = VE1.
+
+```{r}
+temp_filtered_cols <- (df_prescreening_aa_0.99 %>% filter(pass_screen == T))$mark
+
+thresh <- 0.99 
+df_res <- data.frame()
+for (col in temp_filtered_cols){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+
+  res_temp <- run_full_analysis(df_mark,
+                                cl_probs_vars = c("Z"),
+                                covariates = c("Z", "age", "bmi", "riskscoresl"),
+                                event_var = "allstatus",
+                                time_var = "observed_time",
+                                stratification_var = "ind_sa",
+                                boots = boots,
+                                thresh = thresh,
+                                par = rep(0.5, 8),
+                                col_beta0 = 1,
+                                col_beta1 = 5)
+
+  res_temp$mark <- col
+  res_temp$thresh <- thresh
+
+  df_res <- df_res %>%
+    rbind(res_temp)
+}
+
+write.csv(df_res,
+          file = "res_aa_0.99.csv",
+          row.names = F)
+```
+
+
+# Presence of sequon {.tabset .tabset-fade} 
+
+"hxb2.pos.is.sequon.tier1": Binary variables indicating the presence ("1")
+or absence ("0") of a sequon (i.e., the canonical N-linked glycosylation 
+motif:  [N][!P][S|T]) starting at site "pos".  
+   
+These marks were included for a total of 10 sites:  those associated with 
+glycan holes in the C97ZA insert (sites 234 and 392), and those associated
+with V2 bnAb contact glycans (sites 130, 156, 160, 234, 332, and 392).  Two 
+of these sites are redundant (234 and 392), so this amounts to eight unique
+sites total.
+
+Unalignable sites were excluded, but all of these eight sites were alignable,
+so they were all included.
+   
+All of these sites are Tier 1, Type 2 marks, so they all have the "tier1" 
+tag.
+
+For a sensitivity analysis, two new sites were included in this data 
+category:  sites 362 and 363.  These address the sieve effect at site 364,
+which appears to potentially disrupt sequons at these positions.
+
+```{r}
+cols_to_summarize_sequon <- grep(".is.sequon.tier1", colnames(df_sieve), 
+                                 value = TRUE)
+```
+
+## $q_0 = 0.01$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+```{r}
+df_prescreening_sequon_0.01 <- data.frame()
+
+for (col in cols_to_summarize_sequon){
+  df_mark <- create_mark_dataset(df_sieve,
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+  
+  res_temp <- run_variability_screen(df_mark, 
+                                     thresh = 0.01)
+  
+  res_temp$mark <- col
+  
+  df_prescreening_sequon_0.01 <- rbind(df_prescreening_sequon_0.01, res_temp)
+}
+
+df_prescreening_sequon_0.01 <- df_prescreening_sequon_0.01 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 & 
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_sequon_0.01,
+          file = "prescreening_sequon_0.01_screen.csv",
+          row.names = F)
+
+```
+
+
+### Sieve analysis 
+
+No screened in features. 
+
+## $q_0 = 0.99$  
+
+### Variability screen 
+
+Outputs datasets with the following variables: 
+
+* prop_other: Proportion of observations where the raw mark value 
+`Q = K / sequence_depth` is strictly between 0 and 1.
+* cat0_sum: Number of observations classified as $J_{q0} = 0$ (raw mark below the 
+threshold).
+* cat1_sum: Number of observations classified as $J_{q0} = 1$ (raw mark at or 
+above the threshold).
+* mindist0_sum: Number of observations where the mindist-based mark equals 1.
+* mindist1_sum: Number of observations where the mindist-based mark equals 0.
+diff_from_mindist: Sum of absolute differences between the raw classification 
+$J_q0$ and the transformed mindist mark `1 - mindist_mark`.
+* pass_screen: Indicator of whether the dataset meets the variability criteria 
+
+```{r}
+df_prescreening_sequon_0.99 <- data.frame()
+
+for (col in cols_to_summarize_sequon){
+  df_mark <- create_mark_dataset(df_sieve, 
+                                 df_sieve_subj,
+                                 df_sieve_mindist,
+                                 mark = col)
+  
+  res_temp <- run_variability_screen(df_mark, 
+                                     thresh = 0.99)
+  
+  res_temp$mark <- col
+  
+  df_prescreening_sequon_0.99 <- rbind(df_prescreening_sequon_0.99, res_temp)
+}
+
+df_prescreening_sequon_0.99 <- df_prescreening_sequon_0.99 %>%
+  mutate(pass_screen = ifelse(diff_from_mindist >= 12 & cat0_sum >= 4 & 
+                                cat1_sum >= 4, TRUE, FALSE))
+
+write.csv(df_prescreening_sequon_0.99,
+          file = "prescreening_sequon_0.99_screen.csv",
+          row.names = F)
+
+```
+
+### Sieve analysis 
+
+No screened in features. 
+
+# Permutation test 
+
+Code for running the permutation test. Note that this takes a very long time
+to run! 
+
+```{r}
+# obtained screened-in marks 
+df_analysis_params <- 
+  (df_prescreening_match_0.01 %>% 
+     filter(pass_screen == T) %>% 
+     mutate(thresh = 0.01)) %>% 
+  
+  rbind(
+    df_prescreening_match_0.99 %>% 
+     filter(pass_screen == T) %>% 
+     mutate(thresh = 0.99) 
+  ) %>% 
+
+  rbind(
+    df_prescreening_aa_0.01 %>% 
+     filter(pass_screen == T) %>% 
+     mutate(thresh = 0.01)
+  ) %>% 
+  
+  rbind(
+    df_prescreening_aa_0.99 %>% 
+     filter(pass_screen == T) %>% 
+     mutate(thresh = 0.99)
+  ) 
+
+# obtain unadjusted p-values 
+df_res1 <- read.csv("res_match_0.01.csv") %>% 
+  select(mark, thresh, p_val_equal)
+
+df_res2 <- read.csv("res_match_0.99.csv") %>% 
+  select(mark, thresh, p_val_equal)
+
+df_res3 <- read.csv("res_aa_0.01.csv")  %>% 
+  select(mark, thresh, p_val_equal)
+
+df_res4 <- read.csv("res_aa_0.99.csv")  %>% 
+  select(mark, thresh, p_val_equal)
+
+df_res_all <- df_res1 %>% 
+  rbind(df_res2) %>% 
+  rbind(df_res3) %>% 
+  rbind(df_res4)
+
+
+# select screened in marks in sieve dataset
+df_sieve_select <- df_sieve %>% 
+  select(c(subjid, df_analysis_params$mark))
+
+
+# perform permutation test
+nPerm <- 300
+
+# permutated p-values 
+pvals <- future_lapply(1:(nPerm + 1), function(i) {
+  print(i)
+  df_mark_dummy <- create_mark_dataset(df_sieve_select, 
+                                       df_sieve_subj,
+                                       df_sieve_mindist_select,
+                                       mark = df_analysis_params[1, "mark"]) 
+  
+  idx <- sample.int(sum(df_mark_dummy$allstatus == 1))  
+  
+  res_vec <- numeric(nrow(df_analysis_params))
+
+  # run sieve analysis for all setting specified in df_analysis_params 
+  for (i in 1:nrow(df_analysis_params)) {
+    temp_params <- df_analysis_params[i, ]
+    
+    df_mark <- create_mark_dataset(df_sieve_select, 
+                                   df_sieve_subj,
+                                   df_sieve_mindist_select,
+                                   mark = temp_params$mark)
+      
+    df_mark$sequence_depth[df_mark$allstatus == 1] <- 
+      df_mark$sequence_depth[df_mark$allstatus == 1][idx] 
+    
+    df_mark$K[df_mark$allstatus == 1] <- 
+      df_mark$K[df_mark$allstatus == 1][idx]  
+      
+    res_temp <- run_full_analysis(df_mark,
+                                  cl_probs_vars = c("Z"),
+                                  covariates    = c("Z", "age", "bmi", "riskscoresl"),
+                                  event_var     = "allstatus",
+                                  time_var      = "observed_time",
+                                  stratification_var = "ind_sa",
+                                  boots         = 300,
+                                  thresh        = temp_params$thresh,
+                                  par           = rep(0.5, 8),
+                                  col_beta0     = 1,
+                                  col_beta1     = 5)
+    res_vec[i] <- as.numeric(res_temp$p_val_equal)
+  }
+  
+  res_vec
+}, future.seed = TRUE)
+
+pvals_mat <- do.call(rbind, pvals)
+
+# run permutation test
+p.adj.perm2(df_res_all$p_val_equal, permutation_mat)
+```
+
+
+# Specific analyses - hxb2.832.is.L
+
+## Figure 
+
+The code below produces the plot of the raw proportions of hxb2.832.is.L. 
+
+```{r}
+df_mark <- create_mark_dataset(df_sieve,
+                               df_sieve_subj,
+                               df_sieve_mindist,
+                               mark = "hxb2.832.is.L")
+
+means <- df_mark %>% 
+  mutate(raw_Q = (sequence_depth - K) / sequence_depth) %>% 
+  filter(!is.na(raw_Q)) %>% 
+  group_by(Z) %>% 
+  summarise(mean_raw_Q = mean(raw_Q), .groups = "drop")  %>% 
+  mutate( Z = ifelse(Z == 0, "Placebo", "Vaccine"))
+
+
+p <- df_mark %>%
+  mutate(
+    raw_Q = (sequence_depth - K) / sequence_depth,
+    Z = ifelse(Z == 0, "Placebo", "Vaccine"),
+    y_order = rank(sequence_depth, ties.method = "first") 
+  ) %>%
+  filter(!is.na(raw_Q)) %>%
+  ggplot(aes(x = raw_Q, y = y_order, color = Z, size = sqrt(sequence_depth))) +
+  geom_quasirandom(
+    width = 0,              # no horizontal spread
+    groupOnX = FALSE,       # ensures jitter applied across all x values
+    alpha = 0.8
+  ) +
+  geom_vline(xintercept = 0.99, linetype = "dashed", color = "red", size = 1.5) +
+  geom_vline(data = means, aes(xintercept = mean_raw_Q, color = Z), size = 3) +
+  facet_grid(rows = vars(Z), scales = "free_y") +
+  scale_color_manual(values = c("Placebo" = "darkblue", "Vaccine" = "orange")) +
+  xlab("Within-Host L832 Prevalence") +
+  ylab(NULL) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 30),
+    axis.title = element_text(size = 30),
+    strip.text = element_text(size = 30)
+  )
+
+ggsave(
+  filename = "L832_prevalence_plot_gaps_included.pdf",
+  plot = p,
+  width = 16,       # inches
+  height = 8,       # adjust as desired
+  dpi = 600,        # publication-quality
+  units = "in"
+)
+```
+
+
+## Sensitivity analysis 
+
+### Removing gaps 
+
+The code below runs the analysis excluding gaps. 
+
+```{r}
+df_mark <- create_mark_dataset(df_sieve %>% 
+                                 filter(hxb2.832.is.gap != 1 ),
+                               df_sieve_subj,
+                               df_sieve_mindist,
+                               mark = "hxb2.832.is.L")
+
+res_temp <- run_full_analysis(df_mark,
+                              cl_probs_vars = c("Z"),
+                              covariates = c("Z", "age", "bmi", "riskscoresl"),
+                              event_var = "allstatus",
+                              time_var = "observed_time",
+                              stratification_var = "ind_sa",
+                              boots = 300,
+                              thresh = 0.01,
+                              par = rep(0.5, 8),
+                              col_beta0 = 1,
+                              col_beta1 = 5)
+
+res_temp
+```
+
+### Figure without gaps 
+
+The code below produces the plot of the raw proportions of hxb2.832.is.L 
+excluding gaps. 
+
+```{r}
+df_mark <- create_mark_dataset(df_sieve %>% 
+                                 filter(hxb2.832.is.gap != 1),
+                               df_sieve_subj,
+                               df_sieve_mindist,
+                               mark = "hxb2.832.is.L")
+
+means <- df_mark %>% 
+  mutate(raw_Q = (sequence_depth - K) / sequence_depth) %>% 
+  filter(!is.na(raw_Q)) %>% 
+  group_by(Z) %>% 
+  summarise(mean_raw_Q = mean(raw_Q), .groups = "drop")  %>% 
+  mutate( Z = ifelse(Z == 0, "Placebo", "Vaccine"))
+
+
+p <- df_mark %>%
+  mutate(
+    raw_Q = (sequence_depth - K) / sequence_depth,
+    Z = ifelse(Z == 0, "Placebo", "Vaccine"),
+    y_order = rank(sequence_depth, ties.method = "first") 
+  ) %>%
+  filter(!is.na(raw_Q)) %>%
+  ggplot(aes(x = raw_Q, y = y_order, color = Z, size = sqrt(sequence_depth))) +
+  geom_quasirandom(
+    width = 0,              # no horizontal spread
+    groupOnX = FALSE,       # ensures jitter applied across all x values
+    alpha = 0.8
+  ) +
+  geom_vline(xintercept = 0.99, linetype = "dashed", color = "red", size = 1.5) +
+  geom_vline(data = means, aes(xintercept = mean_raw_Q, color = Z), size = 3) +
+  facet_grid(rows = vars(Z), scales = "free_y") +
+  scale_color_manual(values = c("Placebo" = "darkblue", "Vaccine" = "orange")) +
+  xlab("Within-Host L832 Prevalence (Gaps Excluded)") +
+  ylab(NULL) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text.x = element_text(size = 30),
+    axis.title = element_text(size = 30),
+    strip.text = element_text(size = 30)
+  )
+
+ggsave(
+  filename = "L832_prevalence_plot_gaps_excluded.pdf",
+  plot = p,
+  width = 16,       # inches
+  height = 8,       # adjust as desired
+  dpi = 600,        # publication-quality
+  units = "in"
+)
+
+```
+
+
+

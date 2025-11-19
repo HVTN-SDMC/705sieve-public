@@ -404,12 +404,29 @@ results for continuous-valued features of Env amino acid sequences
 <li>common.R</li>
 </ul></li>
 <li><code>code/4_multiseq/multiseq_heatmaps.R</code>: generates heatmaps
-in Figures S14 and S15 based on multiple sequences per participant
+based on multiple sequences per participant
 <ul>
 <li>tidyverse 2.0.0</li>
 <li>ggpubr 0.6.0</li>
 <li>scales 1.3.0</li>
 <li>DT 0.33.3</li>
+</ul></li>
+<li><code>code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd</code>:
+performs multi-sequence sieve analysis
+<ul>
+<li>deconv_fast.R</li>
+<li>multiseq_cox_code.R</li>
+<li>p.adj.perm2.R</li>
+<li>dplyr 1.1.4</li>
+<li>DT 0.33.3</li>
+<li>purrr 1.0.4</li>
+<li>ggplot2 4.0.0</li>
+<li>ggpubr 0.6.0</li>
+<li>survival 3.8-3</li>
+<li>deconvolveR 1.2-1</li>
+<li>future 1.58.0</li>
+<li>future.apply 1.20.0</li>
+<li>ggbeeswarm 0.7.2</li>
 </ul></li>
 <li><code>code/5_viralLoad/viralLoad.R</code>: generates violin and
 boxplots for viral loads and sequencing depths and computes p-values for
@@ -427,6 +444,12 @@ endpoints using linear regressions and p-value adjustment
 <li><code>code/6_TMscore/TMscore.R</code>: plot TM score analysis
 <ul>
 <li>tidyverse 2.0.0</li>
+</ul></li>
+<li><code>code/7_diproperm/1_data_prep_dpp.R</code> and
+<code>code/7_diproperm/2_analyze_dpp.R</code>: performs Diproperm
+high-dimensional feature analysis
+<ul>
+<li><a href="https://github.com/youyifong/diproperm" class="uri">https://github.com/youyifong/diproperm</a></li>
 </ul></li>
 </ul>
 </div>
@@ -457,9 +480,12 @@ R CMD BATCH 2_sieveBinary/sieveBinaryMain.R &amp;
 R CMD BATCH 3_sievePH/VEbyHammingDist.R &amp;
 R CMD BATCH 3_sievePH/VEbyOtherQuantMarks.R &amp;
 R CMD BATCH 4_multiseq/multiseq_heatmaps.R &amp;
+R CMD BATCH 4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd &amp;
 R CMD BATCH 5_viralLoad/viralLoad.R &amp;
 R CMD BATCH 6_TMscore/TMscoreWestfallYoungPermPvalse.R &amp;
-R CMD BATCH 6_TMscore/TMscore.R</code></pre>
+R CMD BATCH 6_TMscore/TMscore.R
+R CMD BATCH 7_diproperm/1_data_prep_dpp.R
+R CMD BATCH 7_diproperm/2_analyze_dpp.R</code></pre>
 </div>
 </div>
 

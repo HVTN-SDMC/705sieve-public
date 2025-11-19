@@ -36,11 +36,25 @@
     + ggplot.summary.sievePH.R
     + common.R
 
-* `code/4_multiseq/multiseq_heatmaps.R`: generates heatmaps in Figures S14 and S15 based on multiple sequences per participant
+* `code/4_multiseq/multiseq_heatmaps.R`: generates heatmaps based on multiple sequences per participant
     + tidyverse 2.0.0
     + ggpubr 0.6.0
     + scales 1.3.0
     + DT 0.33.3
+* `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd`: performs multi-sequence sieve analysis
+    + deconv_fast.R
+    + multiseq_cox_code.R
+    + p.adj.perm2.R
+    + dplyr 1.1.4
+    + DT 0.33.3
+    + purrr 1.0.4
+    + ggplot2 4.0.0
+    + ggpubr 0.6.0
+    + survival 3.8-3
+    + deconvolveR 1.2-1
+    + future 1.58.0
+    + future.apply 1.20.0
+    + ggbeeswarm 0.7.2
     
 * `code/5_viralLoad/viralLoad.R`: generates violin and boxplots for viral loads and sequencing depths and computes p-values for comparing vaccine to placebo
     + tidyverse 2.0.0
@@ -52,6 +66,8 @@
 * `code/6_TMscore/TMscore.R`: plot TM score analysis 
     + tidyverse 2.0.0
 
+* `code/7_diproperm/1_data_prep_dpp.R` and `code/7_diproperm/2_analyze_dpp.R`: performs Diproperm high-dimensional feature analysis
+    + https://github.com/youyifong/diproperm
 
 ### 2. Installation Guide
   
@@ -73,7 +89,11 @@
     R CMD BATCH 3_sievePH/VEbyHammingDist.R &
     R CMD BATCH 3_sievePH/VEbyOtherQuantMarks.R &
     R CMD BATCH 4_multiseq/multiseq_heatmaps.R &
+    R CMD BATCH 4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd &
     R CMD BATCH 5_viralLoad/viralLoad.R &
     R CMD BATCH 6_TMscore/TMscoreWestfallYoungPermPvalse.R &
     R CMD BATCH 6_TMscore/TMscore.R
+    R CMD BATCH 7_diproperm/1_data_prep_dpp.R
+    R CMD BATCH 7_diproperm/2_analyze_dpp.R
+    
     
