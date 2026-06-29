@@ -1,5 +1,7 @@
 ## Genotypic Sieve Analysis in the HVTN 705/HPX2008 Imbokodo Trial
-*R* code implementing data analyses that generated figures and tables in the manuscript Juraska, Li et al., Quantifying how a Mosaic HIV-1 Vaccine Regimen’s Efficacy Depends on Envelope Sequence Features in the HVTN 705/HPX2008 Imbokodo Trial.
+*R* code implementing data analyses that generated figures and tables in the manuscript
+
+Juraska, Li et al., Quantifying how HIV-1 Envelope Sequence Features Impact Vaccine Efficacy in the HVTN 705/HPX2008 Randomized Trial in Southern African Women.
 
 ### 1. System Requirements
 
