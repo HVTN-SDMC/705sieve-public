@@ -53,3 +53,8 @@ rsconnect/
 .DS_Store
 
 /README.html
+
+# renv
+/renv
+
+.Rprofile
