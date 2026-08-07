@@ -1,87 +1,38 @@
-## Genotypic Sieve Analysis in the HVTN 705/HPX2008 Imbokodo Trial
+## Genotypic sieve analysis in the HVTN 705/HPX2008 Imbokodo trial
 *R* code implementing data analyses that generated figures and tables in the manuscript
 
-Juraska, Li et al., Quantifying how HIV-1 Envelope Sequence Features Impact Vaccine Efficacy in the HVTN 705/HPX2008 Randomized Trial in Southern African Women.
+Juraska, Li et al., *Quantifying how HIV-1 Envelope Sequence Features Impact Vaccine Efficacy in the HVTN 705/HPX2008 Randomized Trial in Southern African Women*.
 
-### 1. System Requirements
+### 1. System requirements and installation guide 
 
-  Unless otherwise specified, software was tested on macOS Monterey running R version 4.4.1 (2024-06-14).
+Unless otherwise specified, the software was tested on macOS Sequoia 15.6.1 running *R* version 4.4.3.
+R packages required for analyses are listed in the renv.lock file. To restore all the *R* packages specified in the renv.lock file, follow the instructions below:
+
+ *  Install required version of *R*.  
+ * Download the repository to your local machine and start a project in the Rstudio in the folder.
+ * Install *R* package "renv".  
+ * Run renv::restore(). It creates the folder *renv/library/* and installs packages or links recorded in renv.lock file into the project library.
   
-  Main programs as well as specific R packages and R files required by each program are listed below.
+  
+### 2 Main programs and *R* files required for each analysis
 
-* `code/0_preScreen/screenMain.R`: performs the minimum variablity filter  
-    + tidyverse 2.0.0 
-    + plyr 1.8.9 
-    + screenUtils.R 
-    + common.R 
-    
+* `code/0_preScreen/screenMain.R`: performs the minimum variability filter  
 * `code/1_westfallYoung/sieveWestfallYoungPermPvals.R`: performs sieve analyses and p-value adjustment
-    + sievePH 1.0.3
-    + lunnMcneil.R
-    + p.adj.perm2.R
-    + common.R
-    
 * `code/2_sieveBinary/sieveBinaryMain.R`: summarizes sieve analyses for binary features of Env amino acid sequences
-    + tidyverse 2.0.0
-    + plyr 1.8.9
-    + grid 4.4.1
-    + gridExtra 2.3
-    + gtable 0.3.5
-    + lunnMcneil.R
-    + sieveBinaryUtils.R
-    + forest.R
-    + common.R
-    
 * `code/3_sievePH/VEbyHammingDist.R` and `code/3_sievePH/VEbyOtherQuantMarks.R`: plot sieve analysis results for continuous-valued features of Env amino acid sequences
-    + tidyverse 2.0.0
-    + sievePH 1.0.3
-    + ggplot.summary.sievePH.R
-    + common.R
-
 * `code/4_multiseq/multiseq_heatmaps.R`: generates heatmaps based on multiple sequences per participant
-    + tidyverse 2.0.0
-    + ggpubr 0.6.0
-    + scales 1.3.0
-    + DT 0.33.3
 * `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd`: performs multi-sequence sieve analysis
-    + deconv_fast.R
-    + multiseq_cox_code.R
-    + p.adj.perm2.R
-    + dplyr 1.1.4
-    + DT 0.33.3
-    + purrr 1.0.4
-    + ggplot2 4.0.0
-    + ggpubr 0.6.0
-    + survival 3.8-3
-    + deconvolveR 1.2-1
-    + future 1.58.0
-    + future.apply 1.20.0
-    + ggbeeswarm 0.7.2
-    
 * `code/5_viralLoad/viralLoad.R`: generates violin and boxplots for viral loads and sequencing depths and computes p-values for comparing vaccine to placebo
-    + tidyverse 2.0.0
-    + scales 1.3.0
+* `code/6_TMscore/TMscoreWestfallYoungPermPvals.R`: TM score analysis comparing the TM scores of vaccine endpoints to placebo endpoints using linear regressions and p-value adjustment
+* `code/6_TMscore/TMscore.R`: plots TM score analysis 
+* `code/7_diproperm/1_data_prep_dpp.R` and `code/7_diproperm/2_analyze_dpp.R`: performs the Diproperm high-dimensional feature analysis
 
-* `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R`: TM score analysis comparing the TM scores of vaccine endpoints to placebo endpoints using linear regressions and p-value adjustment
-    + tidyverse 2.0.0
+### 3. How to run the *R* files
 
-* `code/6_TMscore/TMscore.R`: plot TM score analysis 
-    + tidyverse 2.0.0
-
-* `code/7_diproperm/1_data_prep_dpp.R` and `code/7_diproperm/2_analyze_dpp.R`: performs Diproperm high-dimensional feature analysis
-    + https://github.com/youyifong/diproperm
-
-### 2. Installation Guide
-  
-* Install required version of *R*.  
-* Install required *R* packages.  
-* Clone this repository.
-  
-### 3. User Instructions
-
-  Each code file should run in less than 10 minutes except `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` and 
-  `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R` which may take approximately a few hours to run.  Output is saved
-  as either a figure (a `.pdf` file in the `figures` directory) or a table (a `.csv` file in the `tables` directory).
+  Each script file should run in less than 10 minutes except for `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` and 
+  `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R` which may require several hours to complete.  Outputs are saved
+  as either figures (PDF files in the `figures` directory) or tables (CSV files in the `tables` directory). 
+  Outputs from `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` are the same folder as the code.
   
   From the command line, starting in the `code` directory, run the following commands:
 
@@ -91,11 +42,42 @@ Juraska, Li et al., Quantifying how HIV-1 Envelope Sequence Features Impact Vacc
     R CMD BATCH 3_sievePH/VEbyHammingDist.R &
     R CMD BATCH 3_sievePH/VEbyOtherQuantMarks.R &
     R CMD BATCH 4_multiseq/multiseq_heatmaps.R &
-    R CMD BATCH 4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd &
+    Rscript -e "rmarkdown::render('4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd')" &
     R CMD BATCH 5_viralLoad/viralLoad.R &
     R CMD BATCH 6_TMscore/TMscoreWestfallYoungPermPvalse.R &
     R CMD BATCH 6_TMscore/TMscore.R
     R CMD BATCH 7_diproperm/1_data_prep_dpp.R
     R CMD BATCH 7_diproperm/2_analyze_dpp.R
-    
-    
+
+### 4. Mapping from Code to main figures and tables
+#### Table 3
+ - `code/0_preScreen/screenMain.R` generates the table `tables/0_preScreen/posIsAAtier1posScreenedIn.csv` which contains the Tier 1 screened-in residue presence/absence features for sieve analysis.  
+
+#### Figure 1
+ - `code/5_viralLoad/viralLoad.R` generates the plots in all the panels  
+ - `figures/5_viralLoad/viralLoad_trend_lmm.pdf` which contains the longitudinal trajectories of HIV-1 viral load (copies/ml) in primary endpoints in the first RNA-positive sample and 2–6 weeks later while pre-ART initiation
+ - `figures/5_viralLoad/vl_ave_vlbyTreatment.pdf` which contains the boxplots of HIV-1 viral load (copies/ml) in primary endpoints
+ - `figures/5_viralLoad/NTSeqdepthbyTreatment.pdf` which contains the boxplots of Env sequencing depth for nucleotide sequences in primary endpoints
+ - `figures/5_viralLoad/AASeqdepthbyTreatment.pdf` which contains the boxplots of Env sequencing depth for amino acid sequences in primary endpoints
+
+#### Figure 2
+ - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in the panel A
+   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type1to4.csv` contains the adjusted p-values 
+ - `code/2_sieveBinary/sieveBinaryMain.R` generates the vaccine efficacy (VE) by amino acid residue at each Env position in the panel A and plots the forest plot for Env 364 in panel C
+   - `tables/sieveBinary/tier1posIsAAVE_subTypeE.csv` contains the VE by screened-in amino acid residue at each Env position in Tier 1 hypothesis-driven Env amino acid positions
+ - `code/2_sieveBinary/volcanoPlot.R` generates the volcano plot in the panel A
+   - `figures/sieveBinary/tier1_posIs_Volcano.pdf` contains the volcano plot 
+
+#### Figure 3 
+ - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in both panels
+   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type5to7.csv` contains the adjusted p-values 
+ - `code/3_sievePH/VEbyHammingDist.R` generates the plots in both panels
+   - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_c_ab_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in clade C bnAb resistance-associated signature positions 
+   - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_hvtn505_cd4bs_kmer_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in CD4 binding site-overlapping HVTN 505 signature k-mers
+   
+#### Figure 4
+ - `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` generates the figures in both panels
+   - `code/4_multiseq/res_aa_0.99.csv`contains the VE against viral populations with $\geq 99%$ vs. $<99%$ prevalence of leucine at Env position 832 and VE against viral populations whose single representative sequence carries L832 vs. notL832
+   - `code/4_multiseq/L832_prevalence_plot_gaps_included.pdf` contains the observed L832 prevalence among sampled sequences from primary endpoints by treatment group
+   - ? contains the adjusted P-values 
+   
