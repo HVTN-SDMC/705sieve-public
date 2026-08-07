@@ -159,10 +159,7 @@ for (i in 1:length(dist)){
   rg = range(dat1$mark, na.rm=TRUE)
   xLim = c(min(xLim[1], rg[1]), max(xLim[2], rg[2]))
   
-  
-  
-  pdf(file.path(figDir, paste0("705_sievePH_VE_", markFileString[i], "_PP.pdf")), width=0.9*7, height=0.9*6.3)
-  
+
   plotHeights <- c(0.32, 0.68)
   ggsave.width <- 0.7 * 7.3
   ggsave.height <- 0.7 * 6.5
@@ -210,8 +207,8 @@ for (i in 1:length(dist)){
                               plotHeights=plotHeights)
   
   
-  print(p)
-  dev.off()
+  ggsave(filename=file.path(figDir, paste0("705_sievePH_VE_", markFileString[i], "_PP.pdf")), plot=p, width=0.9*7, height=0.9*6.3)
+
 }
 
 pVals <- tibble(dist, pHRunity, pHRconstancy)

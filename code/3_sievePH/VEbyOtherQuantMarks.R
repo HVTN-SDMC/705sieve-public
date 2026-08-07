@@ -77,7 +77,6 @@ for (i in 1:length(markName)){
   # 2-sided Wald test of {H0: VE(v)=VE for all v} against {H1: VE(v) varies with v}
   pHRconstancy <- c(pHRconstancy, sfit$pWald.HRconstant.2sided)
   
-  pdf(file.path(figDir, paste0("705_sievePH_VE_", markFileString[i], "_PP.pdf")), width=0.9*7, height=0.9*6.3)
   xLim <- range(dat1$mark, na.rm=TRUE)
   
   plotHeights <- c(0.32, 0.68)
@@ -125,8 +124,8 @@ for (i in 1:length(markName)){
               ciLineSize=1.6,
               pointSize=2.1,
               plotHeights=plotHeights)
-  print(p)
-  dev.off()
+
+  ggsave(file.path(figDir, paste0("705_sievePH_VE_", markFileString[i], "_PP.pdf")), width=0.9*7, height=0.9*6.3)
 }
 
 pVals <- tibble(markName, pHRunity, pHRconstancy)

@@ -65,8 +65,7 @@ i <- 0
 
 df1 <- df %>%
   mutate(lab = if_else(p.FDR <= 0.2, marks_keep, NA)) %>%
-  group_by(beta, p.unadj, p.FDR, p.FWER) %>%
-  summarize(lab = paste(unique(lab), collapse = "\n"), .groups = "drop")
+  group_by(beta, p.unadj, p.FDR, p.FWER)
 
 for(l in 1:dim(df1)[1]){
   labv <- strsplit(df1$lab[l], split = "\\.")[[1]]
