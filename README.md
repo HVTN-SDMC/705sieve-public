@@ -13,8 +13,12 @@ R packages required for analyses are listed in the renv.lock file. To restore al
  * Install *R* package "renv".  
  * Run renv::restore(). It creates the folder *renv/library/* and installs packages or links recorded in renv.lock file into the project library.
   
-  
-### 2 Main programs and *R* files required for each analysis
+### 2. Data access
+
+Requests for access to the study data can be submitted through Yale Open Data Access [YODA] Project site at `http://yoda.yale.edu`. 
+The data sharing policy of Johnson & Johnson is available at `https://innovativemedicine.jnj.com/our-innovation/clinical-trials/transparency`. 
+
+### 3. Main programs and *R* files required for each analysis
 
 * `code/0_preScreen/screenMain.R`: performs the minimum variability filter  
 * `code/1_westfallYoung/sieveWestfallYoungPermPvals.R`: performs sieve analyses and p-value adjustment
@@ -27,7 +31,7 @@ R packages required for analyses are listed in the renv.lock file. To restore al
 * `code/6_TMscore/TMscore.R`: plots TM score analysis 
 * `code/7_diproperm/1_data_prep_dpp.R` and `code/7_diproperm/2_analyze_dpp.R`: performs the Diproperm high-dimensional feature analysis
 
-### 3. How to run the *R* files
+### 4. How to run the *R* files
 
   Each script file should run in less than 10 minutes except for `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` and 
   `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R` which may require several hours to complete.  Outputs are saved
@@ -49,35 +53,35 @@ R packages required for analyses are listed in the renv.lock file. To restore al
     R CMD BATCH 7_diproperm/1_data_prep_dpp.R
     R CMD BATCH 7_diproperm/2_analyze_dpp.R
 
-### 4. Mapping from Code to main figures and tables
+### 5. Mapping from Code to main figures and tables
 #### Table 3
  - `code/0_preScreen/screenMain.R` generates the table `tables/0_preScreen/posIsAAtier1posScreenedIn.csv` which contains the Tier 1 screened-in residue presence/absence features for sieve analysis.  
 
 #### Figure 1
  - `code/5_viralLoad/viralLoad.R` generates the plots in all the panels  
-  - `figures/5_viralLoad/viralLoad_trend_lmm.pdf` contains the longitudinal trajectories of HIV-1 viral load (copies/ml) in primary endpoints in the first RNA-positive sample and 2–6 weeks later while pre-ART initiation
-  - `figures/5_viralLoad/vl_ave_vlbyTreatment.pdf` contains the boxplots of HIV-1 viral load (copies/ml) in primary endpoints
-  - `figures/5_viralLoad/NTSeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for nucleotide sequences in primary endpoints
-  - `figures/5_viralLoad/AASeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for amino acid sequences in primary endpoints
+  - `figures/viralLoad_trend_lmm.pdf` contains the longitudinal trajectories of HIV-1 viral load (copies/ml) in primary endpoints in the first RNA-positive sample and 2–6 weeks later while pre-ART initiation
+  - `figures/vl_ave_vlbyTreatment.pdf` contains the boxplots of HIV-1 viral load (copies/ml) in primary endpoints
+  - `figures/NTSeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for nucleotide sequences in primary endpoints
+  - `figures/AASeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for amino acid sequences in primary endpoints
 
 #### Figure 2
  - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in the panel A
-   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type1to4.csv` contains the adjusted sieve test p-values 
+   - `tables/WestfallYoungAdjPvalues_tier1Type1to4.csv` contains the adjusted sieve test p-values 
  - `code/2_sieveBinary/sieveBinaryMain.R` generates the vaccine efficacy (VE) by amino acid residue at each Env position in the panel A and plots the forest plot for Env 364 in panel C
-   - `tables/sieveBinary/tier1posIsAAVE_subTypeE.csv` contains the VE by screened-in amino acid residue at each Env position in Tier 1 hypothesis-driven Env amino acid positions
+   - `tables/tier1posIsAAVE_subTypeE.csv` contains the VE by screened-in amino acid residue at each Env position in Tier 1 hypothesis-driven Env amino acid positions
  - `code/2_sieveBinary/volcanoPlot.R` generates the volcano plot in the panel A
-   - `figures/sieveBinary/tier1_posIs_Volcano.pdf` contains the volcano plot 
+   - `figures/tier1_posIs_Volcano.pdf` contains the volcano plot 
 
 #### Figure 3 
  - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in both panels
-   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type5to7.csv` contains the adjusted sieve test p-values 
+   - `tables/WestfallYoungAdjPvalues_tier1Type5to7.csv` contains the adjusted sieve test p-values 
  - `code/3_sievePH/VEbyHammingDist.R` generates the plots in both panels
-   - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_c_ab_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in clade C bnAb resistance-associated signature positions 
-   - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_hvtn505_cd4bs_kmer_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in CD4 binding site-overlapping HVTN 505 signature k-mers
+   - `figures/705_sievePH_VE_hdist_zspace_c97za_c_ab_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in clade C bnAb resistance-associated signature positions 
+   - `figures/705_sievePH_VE_hdist_zspace_c97za_hvtn505_cd4bs_kmer_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in CD4 binding site-overlapping HVTN 505 signature k-mers
    
 #### Figure 4
  - `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` generates the results in both panels
-   - `code/4_multiseq/res_aa_0.99.csv`contains the VE against viral populations with $\geq 99%$ vs. $<99%$ prevalence of leucine at Env position 832 and VE against viral populations whose single representative sequence carries L832 vs. notL832
+   - `code/4_multiseq/res_aa_0.99.csv`contains the VE against viral populations with $\geq 99\%$ vs. $<99\%$ prevalence of leucine at Env position 832 and VE against viral populations whose single representative sequence carries L832 vs. notL832
    - `code/4_multiseq/L832_prevalence_plot_gaps_included.pdf` contains the observed L832 prevalence among sampled sequences from primary endpoints by treatment group
    - `code/4_multiseq/permutation_p_values.csv` contains the adjusted sieve P-values 
    

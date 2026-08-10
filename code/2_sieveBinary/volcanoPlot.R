@@ -17,7 +17,7 @@ tableDir <- file.path(repoDir, "tables")
 
 library(tidyverse)
 library(viridis)
-source(file.path(repoDir, "705sieve/finalAnalysis/code/common.R"))
+source(file.path(repoDir, "code/common.R"))
 source(file.path(codeDir,"sieveBinaryUtils.R"))
   
 sieveData <- read.csv(file.path(dataDir, dat_file)) %>%
