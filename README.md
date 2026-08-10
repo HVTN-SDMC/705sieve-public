@@ -8,8 +8,8 @@ Juraska, Li et al., *Quantifying how HIV-1 Envelope Sequence Features Impact Vac
 Unless otherwise specified, the software was tested on macOS Sequoia 15.6.1 running *R* version 4.4.3.
 R packages required for analyses are listed in the renv.lock file. To restore all the *R* packages specified in the renv.lock file, follow the instructions below:
 
- *  Install required version of *R*.  
- * Download the repository to your local machine and start a project in the Rstudio in the folder.
+ * Install required version of *R*.  
+ * Clone or download the repository to your local machine and open it as an RStudio project.
  * Install *R* package "renv".  
  * Run renv::restore(). It creates the folder *renv/library/* and installs packages or links recorded in renv.lock file into the project library.
   
@@ -32,7 +32,7 @@ R packages required for analyses are listed in the renv.lock file. To restore al
   Each script file should run in less than 10 minutes except for `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` and 
   `code/6_TMscore/TMscoreWestfallYoungPermPvalse.R` which may require several hours to complete.  Outputs are saved
   as either figures (PDF files in the `figures` directory) or tables (CSV files in the `tables` directory). 
-  Outputs from `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` are the same folder as the code.
+  Outputs from `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` are placed in the same folder as the code.
   
   From the command line, starting in the `code` directory, run the following commands:
 
@@ -62,7 +62,7 @@ R packages required for analyses are listed in the renv.lock file. To restore al
 
 #### Figure 2
  - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in the panel A
-   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type1to4.csv` contains the adjusted p-values 
+   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type1to4.csv` contains the adjusted sieve test p-values 
  - `code/2_sieveBinary/sieveBinaryMain.R` generates the vaccine efficacy (VE) by amino acid residue at each Env position in the panel A and plots the forest plot for Env 364 in panel C
    - `tables/sieveBinary/tier1posIsAAVE_subTypeE.csv` contains the VE by screened-in amino acid residue at each Env position in Tier 1 hypothesis-driven Env amino acid positions
  - `code/2_sieveBinary/volcanoPlot.R` generates the volcano plot in the panel A
@@ -70,14 +70,14 @@ R packages required for analyses are listed in the renv.lock file. To restore al
 
 #### Figure 3 
  - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in both panels
-   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type5to7.csv` contains the adjusted p-values 
+   - `tables/westfallYoung/WestfallYoungAdjPvalues_tier1Type5to7.csv` contains the adjusted sieve test p-values 
  - `code/3_sievePH/VEbyHammingDist.R` generates the plots in both panels
    - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_c_ab_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in clade C bnAb resistance-associated signature positions 
    - `figures/sievePH/705_sievePH_VE_hdist_zspace_c97za_hvtn505_cd4bs_kmer_PP.pdf` contains the VE against viruses with physicochemical (PC)-weighted Hamming distances from the C97ZA Env vaccine insert sequence in CD4 binding site-overlapping HVTN 505 signature k-mers
    
 #### Figure 4
- - `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` generates the figures in both panels
+ - `code/4_multiseq/cox_multiseq_hvtn705_sieve_analysis.Rmd` generates the results in both panels
    - `code/4_multiseq/res_aa_0.99.csv`contains the VE against viral populations with $\geq 99%$ vs. $<99%$ prevalence of leucine at Env position 832 and VE against viral populations whose single representative sequence carries L832 vs. notL832
    - `code/4_multiseq/L832_prevalence_plot_gaps_included.pdf` contains the observed L832 prevalence among sampled sequences from primary endpoints by treatment group
-   - ? contains the adjusted P-values 
+   - `code/4_multiseq/permutation_p_values.csv` contains the adjusted sieve P-values 
    

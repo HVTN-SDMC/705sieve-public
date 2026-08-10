@@ -787,7 +787,10 @@ pvals <- future_lapply(1:(nPerm + 1), function(i) {
 pvals_mat <- do.call(rbind, pvals)
 
 # run permutation test
-p.adj.perm2(df_res_all$p_val_equal, permutation_mat)
+ans <- p.adj.perm2(df_res_all$p_val_equal, permutation_mat)
+write.csv(ans,
+          file = "permutation_p_values.csv",
+          row.names = F)
 ```
 
 
