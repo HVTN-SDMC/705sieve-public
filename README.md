@@ -55,10 +55,10 @@ R packages required for analyses are listed in the renv.lock file. To restore al
 
 #### Figure 1
  - `code/5_viralLoad/viralLoad.R` generates the plots in all the panels  
- - `figures/5_viralLoad/viralLoad_trend_lmm.pdf` contains the longitudinal trajectories of HIV-1 viral load (copies/ml) in primary endpoints in the first RNA-positive sample and 2–6 weeks later while pre-ART initiation
- - `figures/5_viralLoad/vl_ave_vlbyTreatment.pdf` contains the boxplots of HIV-1 viral load (copies/ml) in primary endpoints
- - `figures/5_viralLoad/NTSeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for nucleotide sequences in primary endpoints
- - `figures/5_viralLoad/AASeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for amino acid sequences in primary endpoints
+  - `figures/5_viralLoad/viralLoad_trend_lmm.pdf` contains the longitudinal trajectories of HIV-1 viral load (copies/ml) in primary endpoints in the first RNA-positive sample and 2–6 weeks later while pre-ART initiation
+  - `figures/5_viralLoad/vl_ave_vlbyTreatment.pdf` contains the boxplots of HIV-1 viral load (copies/ml) in primary endpoints
+  - `figures/5_viralLoad/NTSeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for nucleotide sequences in primary endpoints
+  - `figures/5_viralLoad/AASeqdepthbyTreatment.pdf` contains the boxplots of Env sequencing depth for amino acid sequences in primary endpoints
 
 #### Figure 2
  - `code/1_westfallYoung/sieveWestfallYoungPermPvals.R` generates the adjusted p-values in the panel A
